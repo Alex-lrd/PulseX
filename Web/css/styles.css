@@ -1,3 +1,62 @@
-* {
-    
+body {
+    margin: 0;
+    background: #001f1f;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.radar {
+    position: relative;
+    width: 1000px;
+    height: 1000px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,255,200,0.1) 1%, transparent 70%);
+    border: 2px solid rgba(0,255,200,0.4);
+    overflow: hidden;
+}
+
+/* Grille */
+.radar::before {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background:
+        repeating-radial-gradient(circle, rgba(0,255,200,0.2) 0px, rgba(0,255,200,0.2) 1px, transparent 1px, transparent 50px),
+        repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(0,255,200,0.2) 50px),
+        repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(0,255,200,0.2) 50px);
+    border-radius: 50%;
+}
+
+/* Ligne de scan */
+.scan {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: conic-gradient(rgba(0,255,200,0.4) 0deg, rgba(0,255,200,0.1) 60deg, transparent 90deg);
+    border-radius: 50%;
+    animation: rotate 3s linear infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Points détectés */
+.dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #00ffd0;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #00ffd0;
+    animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
 }
