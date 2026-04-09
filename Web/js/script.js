@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const radar = document.querySelector('.radar');
 
     function createDot() {
+        setupListener();
+
         const dot = document.createElement('div');
         dot.classList.add('dot');
 
@@ -17,6 +19,12 @@ document.addEventListener('DOMContentLoaded', () => {
         radar.appendChild(dot);
 
         setTimeout(() => dot.remove(), 4000);
+    }
+
+    function setupListener() {
+        document.querySelector('.settings').addEventListener('click', () => {
+            alert("settings");
+        });
     }
 
     setInterval(createDot, 2000);
