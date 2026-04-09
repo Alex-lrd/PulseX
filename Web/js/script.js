@@ -1,31 +1,38 @@
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Génération aléatoire de points (optionnel)
-    const radar = document.querySelector('.radar');
+    // Les variables
+    window.radar = document.querySelector('.radar');
+    window.dot = document.createElement('div');
+    window.settings = document.querySelector('.settings');
+    window.overlay = document.querySelector('.overlay');
+    window.popup = document.querySelector('.popup');
 
-    function createDot() {
-        setupListener();
+    setupListener();
 
-        const dot = document.createElement('div');
-        dot.classList.add('dot');
-
-        const size = 400;
-        const x = Math.random() * size;
-        const y = Math.random() * size;
-
-        dot.style.left = x + "px";
-        dot.style.top = y + "px";
-
-        radar.appendChild(dot);
-
-        setTimeout(() => dot.remove(), 4000);
-    }
-
-    function setupListener() {
-        document.querySelector('.settings').addEventListener('click', () => {
-            document.querySelector('.overlay').classList.toggle('open');
-        });
-    }
-
-    setInterval(createDot, 2000);
+    // setInterval(createDot, 2000);
 })
+
+function setupListener() {
+    window.settings.addEventListener('click', () => {
+        window.overlay.classList.toggle('open');
+
+    });
+}
+
+function createDot() {
+
+    window.dot.classList.add('dot');
+
+    const size = 400;
+    const x = Math.random() * size;
+    const y = Math.random() * size;
+
+    window.dot.style.left = x + "px";
+    window.dot.style.top = y + "px";
+
+    window.radar.appendChild(window.dot);
+
+    setTimeout(() => dot.remove(), 4000);
+}
+
+
