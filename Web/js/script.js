@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupListener() {
         document.querySelector('.settings').addEventListener('click', () => {
-            alert("settings");
+            document.querySelector('.overlay').classList.toggle('open');
         });
     }
 
