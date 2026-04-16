@@ -1,4 +1,4 @@
-# 📡 Projet Radar  
+# 📡 Projet PulseX  
 UE : Électronique & Communication Sans Fil
 
 ## 📖 Description  
