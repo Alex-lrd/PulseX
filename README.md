@@ -47,5 +47,3 @@ Le système collecte des données, les traite, puis peut les exploiter pour des 
 - Liard Alexandre   
 - Neiss Adel    
 
-## 📌 Remarques  
-Projet réalisé dans un cadre pédagogique pour illustrer les concepts d’électronique embarquée et de communication sans fil.
