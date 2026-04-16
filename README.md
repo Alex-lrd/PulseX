@@ -13,8 +13,8 @@ Le système collecte des données, les traite, puis peut les exploiter pour des 
 
 ## 🧩 Composants utilisés  
 - Carte UCA  
-- Cerveau moteur  
-- Capteur ultrasonique (ex : HC-SR04)  
+- Servo moteur  
+- Capteur ultrason x2
 
 ## ⚙️ Technologies utilisées  
 - Programmation embarquée (C / C++ / Arduino)  
