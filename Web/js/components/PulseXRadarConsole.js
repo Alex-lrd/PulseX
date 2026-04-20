@@ -3,9 +3,10 @@ class PulseXRadarConsole extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
         this._commands = {};
+        
         this.currentMatchIndex = 0;
-        this.searchQuery = "";
-
+        this.baseQuery = ""; 
+        
         this.history = [];
         this.historyIndex = -1;
     }
@@ -46,27 +47,28 @@ class PulseXRadarConsole extends HTMLElement {
                 font-size: 1.2em; 
                 font-family: inherit;
                 white-space: pre;
+                border: none;
+                margin: 0;
             }
             #cmdInput {
                 background: transparent;
                 color: transparent;
                 caret-color: #ffffff;
                 outline: none; 
-                border: none;
-                /*z-index: 2;*/
+                z-index: 2;
             }
             #highlight {
-                /*background: #0d1117;*/
-                color: #888;
-                /*z-index: 1;*/
+                background: #0d1117;
+                color: #888; /* Texte non reconnu en gris */
+                z-index: 1;
                 pointer-events: none;
                 overflow: hidden;
             }
             
             .slash { color: #ffffff; font-weight: bold; }
-            .cmd   { color: #5cd5f5; }
+            .cmd   { color: #5cd5f5; } /* Bleu pour la commande */
             .num   { color: #fff6a0; }
-            .kw    { color: #d38cff; }
+            .arg    { color: #d38cff; } /* Violet pour les arguments connus */
         </style>
         <div class="input-wrapper">
             <div id="highlight"></div>
@@ -76,29 +78,25 @@ class PulseXRadarConsole extends HTMLElement {
     }
 
     highlight(text) {
+        if (!text) return "";
         let escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-        // Regex pour capturer : 
-        // 1. Le slash (/)
-        // 2. Les nombres (\d+)
-        // 3. Les mots (\w+)
-        return escaped.replace(/(\/)|(\d+)|(\w+)/g, (match, slash, num, word) => {
+        return escaped.replace(/(\/)|(\d+)|(\w+)/g, (match, slash, num, word, offset) => {
             if (slash) return `<span class="slash">/</span>`;
             if (num) return `<span class="num">${num}</span>`;
             if (word) {
-                // Si c'est une commande (juste après le slash)
-                if (text.includes('/' + word)) {
+                // 1 car cmd apres slash
+                if (offset === 1 && text.startsWith('/')) {
                     return `<span class="cmd">${word}</span>`;
                 }
                 
-                // Si c'est un argument défini dans commandsTree ou un mot-clé standard
+                // Arguments
                 const allPossibleArgs = Object.values(this._commands).flat();
-                const keywords = ['on', 'off', 'start', 'stop', 'status'];
                 
-                if (allPossibleArgs.includes(word) || keywords.includes(word)) {
-                    return `<span class="kw">${word}</span>`;
+                if (allPossibleArgs.includes(word)) {
+                    return `<span class="arg">${word}</span>`;
                 }
-                return word;
+                return word; // Gris par défaut
             }
             return match;
         });
@@ -113,7 +111,17 @@ class PulseXRadarConsole extends HTMLElement {
         });
 
         input.addEventListener('keydown', (e) => {
-            if (e.key === "Enter") {
+            if (e.key === "Tab") {
+                e.preventDefault();
+                this.handleAutocomplete(input);
+                display.innerHTML = this.highlight(input.value);
+                
+                // Forcer curseur après complétion
+                setTimeout(() => {
+                    input.setSelectionRange(input.value.length, input.value.length);
+                }, 0);
+            } 
+            else if (e.key === "Enter") {
                 e.preventDefault();
                 const cmd = input.value.trim();
                 if (!cmd) return;
@@ -128,69 +136,51 @@ class PulseXRadarConsole extends HTMLElement {
                     bubbles: true,
                     composed: true,
                 }));
+                
                 input.value = "";
                 display.innerHTML = "";
-            } else if (e.key === "ArrowUp") {
-                e.preventDefault();
-                this.navigateHistory(1, input, display);
-            } 
-            else if (e.key === "ArrowDown") {
-                e.preventDefault();
-                this.navigateHistory(-1, input, display);
-            } else if (e.key === "Tab") {
-                e.preventDefault();
-                this.handleAutocomplete(input);
-                display.innerHTML = this.highlight(input.value);
-                input.focus();
-                input.setSelectionRange(input.value.length, input.value.length);
-            } else if (e.key !== "Shift" && e.key !== "Control" && e.key !== "Alt") {
-                this.searchQuery = "";
                 this.currentMatchIndex = 0;
+                this.baseQuery = "";
+            } 
+            else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                e.preventDefault();
+                this.navigateHistory(e.key === "ArrowUp" ? 1 : -1, input, display);
+            } 
+            else if (!["Shift", "Control", "Alt", "Meta"].includes(e.key)) {
+                // Réinit l'état du Tab
+                this.currentMatchIndex = 0;
+                this.baseQuery = "";
             }
         });
     }
 
     handleAutocomplete(input) {
-        const primaryCommands = Object.keys(this._commands);
-        const fullText = input.value;
-        const parts = fullText.split(" ");
-
-        if (this.searchQuery === "") {
-            this.searchQuery = fullText;
+        // Save input
+        if (this.currentMatchIndex === 0) {
+            this.baseQuery = input.value;
         }
 
-        if (
-            !fullText.includes(" ") ||
-            (fullText.includes(" ") && this.searchQuery === fullText.trim())
-        ) {
-            const matches = primaryCommands.filter((command) =>
-                command.startsWith(this.searchQuery),
-            );
+        const fullText = this.baseQuery;
+        const parts = fullText.trim().split(/\s+/);
+        const isCommandOnly = !fullText.includes(" ");
+
+        if (isCommandOnly) {
+            const query = parts[0];
+            const matches = Object.keys(this._commands).filter(c => c.startsWith(query));
 
             if (matches.length > 0) {
                 input.value = matches[this.currentMatchIndex % matches.length];
                 this.currentMatchIndex++;
             }
-
-            return;
-        }
-
-        if (parts.length >= 2) {
-            const command = parts[0];
-
-            if (this.searchQuery.split(" ").length < 2) {
-                this.searchQuery = fullText;
-            }
-
-            const argumentPart = this.searchQuery.split(" ")[1] || "";
-
-            if (this._commands[command]) {
-                const matches = this._commands[command].filter((argument) =>
-                    argument.startsWith(argumentPart),
-                );
-
+        } else {
+            const cmd = parts[0];
+            const argQuery = parts[1] || "";
+            
+            if (this._commands[cmd]) {
+                const matches = this._commands[cmd].filter(arg => arg.startsWith(argQuery));
                 if (matches.length > 0) {
-                    input.value = `${command} ${matches[this.currentMatchIndex % matches.length]}`;
+                    const match = matches[this.currentMatchIndex % matches.length];
+                    input.value = `${cmd} ${match}`;
                     this.currentMatchIndex++;
                 }
             }
