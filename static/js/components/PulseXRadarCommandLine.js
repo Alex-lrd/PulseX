@@ -33,10 +33,18 @@ class PulseXRadarCommandLine extends HTMLElement {
             .consoleDiv {
                 display: flex;
                 flex-direction: column;
-                flex: 1;
-                overflow-y: auto;
                 height: calc(100% - 42px);
                 background: #091318;
+            }
+
+            #console::-webkit-scrollbar-track { background: #091318; }
+            #console::-webkit-scrollbar-thumb { 
+                background: #1f2a30;
+            }
+            #console::-webkit-scrollbar-thumb:hover { background: #133433; }
+            #console { 
+                scrollbar-width: thin; 
+                scrollbar-color: #1f2a30 #091318; 
             }
 
             .consoleDiv h2 {
@@ -45,7 +53,8 @@ class PulseXRadarCommandLine extends HTMLElement {
             }
 
             #console {
-                height: 100%;
+                flex: 1;
+                overflow-y: auto;
                 padding: 0 10px;
             }
 
@@ -54,14 +63,14 @@ class PulseXRadarCommandLine extends HTMLElement {
             }
 
             .errorDiv {
-                color: #ffa3a3ff;
+                color: #ffa3a3;
             }
 
             .inputWrapper {
                 position: relative;
                 width: 100%; 
                 height: 40px;
-                border-top: 2px solid var(--border);
+                border-top: 2px solid #133433;
             }
             
             #cmdInput, 
@@ -79,6 +88,7 @@ class PulseXRadarCommandLine extends HTMLElement {
                 border: none;
                 margin: 0;
             }
+
             #cmdInput {
                 background: transparent;
                 color: transparent;
@@ -86,25 +96,26 @@ class PulseXRadarCommandLine extends HTMLElement {
                 outline: none; 
                 z-index: 2;
             }
+
             #highlight {
                 background: #0d1117;
-                color: #888; /* Texte non reconnu en gris */
+                color: #888;
                 z-index: 1;
                 pointer-events: none;
                 overflow: hidden;
             }
             
             .slash { color: #ffffff; font-weight: bold; }
-            .cmd   { color: #5cd5f5; } /* Bleu pour la commande */
+            .cmd   { color: #5cd5f5; }
             .num   { color: #fff6a0; }
-            .arg    { color: #d38cff; } /* Violet pour les arguments connus */
+            .arg   { color: #d38cff; }
         </style>
+
         <div class="consoleDiv">
             <h2>Historique</h2>
-            <div id="console">
-
-            </div>
+            <div id="console"></div>
         </div>
+
         <div class="inputWrapper">
             <div id="highlight"></div>
             <input id="cmdInput" spellcheck="false" autocomplete="off" />
@@ -120,18 +131,15 @@ class PulseXRadarCommandLine extends HTMLElement {
             if (slash) return `<span class="slash">/</span>`;
             if (num) return `<span class="num">${num}</span>`;
             if (word) {
-                // 1 car cmd apres slash
                 if (offset === 1 && text.startsWith('/')) {
                     return `<span class="cmd">${word}</span>`;
                 }
                 
-                // Arguments
-                const allPossibleArgs = Object.values(this._commands).flat();
-                
-                if (allPossibleArgs.includes(word)) {
+                const allArgs = Object.values(this._commands).flat();
+                if (allArgs.includes(word)) {
                     return `<span class="arg">${word}</span>`;
                 }
-                return word; // Gris par défaut
+                return word;
             }
             return match;
         });
@@ -151,7 +159,6 @@ class PulseXRadarCommandLine extends HTMLElement {
                 this.handleAutocomplete(input);
                 display.innerHTML = this.highlight(input.value);
                 
-                // Forcer curseur après complétion
                 setTimeout(() => {
                     input.setSelectionRange(input.value.length, input.value.length);
                 }, 0);
@@ -182,7 +189,6 @@ class PulseXRadarCommandLine extends HTMLElement {
                 this.navigateHistory(e.key === "ArrowUp" ? 1 : -1, input, display);
             } 
             else if (!["Shift", "Control", "Alt", "Meta"].includes(e.key)) {
-                // Réinit l'état du Tab
                 this.currentMatchIndex = 0;
                 this.baseQuery = "";
             }
@@ -190,7 +196,6 @@ class PulseXRadarCommandLine extends HTMLElement {
     }
 
     handleAutocomplete(input) {
-        // Save input
         if (this.currentMatchIndex === 0) {
             this.baseQuery = input.value;
         }
@@ -200,9 +205,7 @@ class PulseXRadarCommandLine extends HTMLElement {
         const isCommandOnly = !fullText.includes(" ");
 
         if (isCommandOnly) {
-            const query = parts[0];
-            const matches = Object.keys(this._commands).filter(c => c.startsWith(query));
-
+            const matches = Object.keys(this._commands).filter(c => c.startsWith(parts[0]));
             if (matches.length > 0) {
                 input.value = matches[this.currentMatchIndex % matches.length];
                 this.currentMatchIndex++;
@@ -214,8 +217,7 @@ class PulseXRadarCommandLine extends HTMLElement {
             if (this._commands[cmd]) {
                 const matches = this._commands[cmd].filter(arg => arg.startsWith(argQuery));
                 if (matches.length > 0) {
-                    const match = matches[this.currentMatchIndex % matches.length];
-                    input.value = `${cmd} ${match}`;
+                    input.value = `${cmd} ${matches[this.currentMatchIndex % matches.length]}`;
                     this.currentMatchIndex++;
                 }
             }
@@ -243,32 +245,51 @@ class PulseXRadarCommandLine extends HTMLElement {
         setTimeout(() => input.setSelectionRange(input.value.length, input.value.length), 0);
     }
 
+    isAtBottom(el) {
+        return el.scrollHeight - el.scrollTop <= el.clientHeight + 5;
+    }
+
+    scrollToBottom(el) {
+        el.scrollTop = el.scrollHeight;
+    }
+
     addCommand(cmd) {
-        let commandDiv = document.createElement('div');
-        commandDiv.innerHTML = `
-            ${this.highlight(cmd)}
-        `;
-        this.shadowRoot.getElementById('console').appendChild(commandDiv);
+        const consoleEl = this.shadowRoot.getElementById('console');
+        const shouldScroll = this.isAtBottom(consoleEl);
+
+        let div = document.createElement('div');
+        div.innerHTML = this.highlight(cmd);
+
+        consoleEl.appendChild(div);
+
+        if (shouldScroll) this.scrollToBottom(consoleEl);
     }
 
     addLog(log) {
-        let logDiv = document.createElement('div');
-        logDiv.className = 'logDiv';
-        logDiv.innerHTML = `
-            <span class="log">LOG: ${log}</span>
-        `;
-        this.shadowRoot.getElementById('console').appendChild(logDiv);
+        const consoleEl = this.shadowRoot.getElementById('console');
+        const shouldScroll = this.isAtBottom(consoleEl);
+
+        let div = document.createElement('div');
+        div.className = 'logDiv';
+        div.innerHTML = `LOG: ${log}`;
+
+        consoleEl.appendChild(div);
+
+        if (shouldScroll) this.scrollToBottom(consoleEl);
     }
 
     addError(error) {
-        let errorDiv = document.createElement('div');
-        errorDiv.className = 'errorDiv';
-        errorDiv.innerHTML = `
-            ${error}
-        `;
-        this.shadowRoot.getElementById('console').appendChild(errorDiv);
-    }
+        const consoleEl = this.shadowRoot.getElementById('console');
+        const shouldScroll = this.isAtBottom(consoleEl);
 
+        let div = document.createElement('div');
+        div.className = 'errorDiv';
+        div.innerHTML = error;
+
+        consoleEl.appendChild(div);
+
+        if (shouldScroll) this.scrollToBottom(consoleEl);
+    }
 }
 
 customElements.define('pulsex-radar-command-line', PulseXRadarCommandLine);

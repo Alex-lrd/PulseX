@@ -1,9 +1,12 @@
 import "./components/PulseXRadarCommandLine.js";
-// import "./components/PulseXRadarElement.js";
+import "./components/PulseXRadarElement.js";
 
 document.addEventListener("DOMContentLoaded", () => {
-    const radarConsole = document.querySelector(".console-log");
+    // const radarConsole = document.querySelector(".console-log");
     const radarCommandLine = document.querySelector("pulsex-radar-command-line");
+    const radar = document.getElementById('radar');
+
+
 
     if (radarCommandLine) {
         // Setup les commandes
@@ -74,11 +77,16 @@ document.addEventListener("DOMContentLoaded", () => {
             const res = await fetch("/api/distance");
             const data = await res.json();
 
-            console.log("DATA:", data);
+            // console.log("DATA:", data);
 
             if (data.distance !== null) {
-                console.log(data.distance.toFixed(2));
+                // console.log(data.distance);
                 radarCommandLine.addLog(data.distance);
+
+                radar.addTarget(data.distance);
+
+
+
                 // document.getElementById("distance").innerText =
                 //     "Distance: " + data.distance.toFixed(2) + " cm";
             }

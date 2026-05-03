@@ -1,19 +1,9 @@
-import { formatDistance } from "../utils/formatters.js";
-
 export class PulseXRadarElement extends HTMLElement {
     constructor() {
         super();
-        this.targetNodes = new Map();
-        this.isReady = false;
-        this.pendingSnapshot = null;
-        this.pendingConnectionState = null;
     }
 
     connectedCallback() {
-        if (this.isReady) {
-            return;
-        }
-
         this.classList.add("radar");
         this.innerHTML = `
             <div class="radar__ring radar__ring--outer"></div>
@@ -26,74 +16,42 @@ export class PulseXRadarElement extends HTMLElement {
             <div class="radar__beam"></div>
             <div class="radar__center"></div>
         `;
-
-        this.beamNode = this.querySelector(".radar__beam");
-        this.isReady = true;
-
-        if (this.pendingSnapshot) {
-            this.renderSnapshot(this.pendingSnapshot);
-            this.pendingSnapshot = null;
-        }
-
-        if (this.pendingConnectionState) {
-            this.renderConnection(this.pendingConnectionState);
-            this.pendingConnectionState = null;
-        }
     }
 
-    renderSnapshot(snapshot) {
-        if (!this.isReady) {
-            this.pendingSnapshot = snapshot;
-            return;
-        }
 
-        this.beamNode.style.transform = `translateX(-50%) rotate(${snapshot.beamRotation}deg)`;
-        this._renderTargets(snapshot.targets);
+    addTarget(distance) {
+        const radarWidth = this.offsetWidth; // Largeur du radar sans les marges
+        const radarHeight = this.offsetHeight;
+        const maxDistance = 400; // Distance maximale que le radar peut afficher
+
+        // Pas de moteur donc pas d'angle (test angle random)
+        const angle = Math.random() * 2 * Math.PI;
+        const radius = (distance / maxDistance) * (radarWidth / 2); // Rayon proportionnel à la distance
+
+        const x = radarWidth / 2 + radius * Math.cos(angle);
+        const y = radarHeight / 2 + radius * Math.sin(angle);
+
+        const target = document.createElement("div");
+        target.classList.add("target");
+        if (distance <= 100) {
+            target.classList.add("warning");
+        }
+        target.style.left = `${x}px`;
+        target.style.top = `${y}px`;
+
+        this.appendChild(target);
+
+        setTimeout(() => {
+            target.classList.add("targetFadeOut");
+            setTimeout(() => {
+                target.remove();
+            }, 1000);
+        }, 3000);
     }
 
-    renderConnection(state) {
-        if (!this.isReady) {
-            this.pendingConnectionState = state;
-            return;
-        }
+    
 
-        if (state.isStreaming) {
-            this.removeAttribute("data-paused");
-            return;
-        }
-
-        this.setAttribute("data-paused", "true");
-    }
-
-    _renderTargets(targets = []) {
-        const usedKeys = new Set();
-
-        targets.forEach((target) => {
-            usedKeys.add(target.key);
-
-            let node = this.targetNodes.get(target.key);
-
-            if (!node) {
-                node = document.createElement("div");
-                this.targetNodes.set(target.key, node);
-                this.appendChild(node);
-            }
-
-            node.className = target.isActive ? "radar-dot radar-dot--active" : "radar-dot";
-            node.style.left = `${target.position.left}%`;
-            node.style.top = `${target.position.top}%`;
-            node.title = `${target.label} • ${formatDistance(target.distance)}`;
-        });
-
-        this.targetNodes.forEach((node, key) => {
-            if (!usedKeys.has(key)) {
-                node.remove();
-                this.targetNodes.delete(key);
-            }
-        });
-    }
+    
 }
 
 customElements.define("pulsex-radar", PulseXRadarElement);
-
-    
