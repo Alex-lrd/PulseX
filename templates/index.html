@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link href="./css/styles.css" rel="stylesheet" />
+        <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet" />
         <title>PulseX Console Radar</title>
     </head>
     <body>
@@ -16,6 +16,8 @@
                     </div>
                 </header>
 
+                <!--
+
                 <section class="console-log-panel">
                     <div class="console-log-header">
                         <h2>Journal</h2>
@@ -24,7 +26,9 @@
                     <div class="console-log" id="consoleLog"></div>
                 </section>
 
-                <pulsex-radar-console></pulsex-radar-console>
+                -->
+
+                <pulsex-radar-command-line></pulsex-radar-command-line>
 
             </aside>
 
@@ -44,6 +48,6 @@
             </main>
         </div>
 
-        <script type="module" src="./js/script.js"></script>
+        <script type="module" src="{{ url_for('static', filename='js/script.js') }}"></script>
     </body>
 </html>

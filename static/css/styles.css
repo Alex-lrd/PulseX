@@ -92,10 +92,13 @@ input {
 .console-log {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    font-family: 'Courier New', monospace;
     overflow-y: auto;
-    min-height: 220px;
-    padding-right: 4px;
+
+    gap: 10px;
+    height: 100%;
+    padding: 0 10px;
+
 }
 
 .console-entry {
@@ -172,7 +175,7 @@ input {
 }
 */
 
-pulsex-radar-console {
+pulsex-radar-command-line {
     border-top: 2px solid var(--border);
 }
 

@@ -94,6 +94,6 @@ export class PulseXRadarElement extends HTMLElement {
     }
 }
 
-if (!customElements.get("pulsex-radar")) {
-    customElements.define("pulsex-radar", PulseXRadarElement);
-}
+customElements.define("pulsex-radar", PulseXRadarElement);
+
+    

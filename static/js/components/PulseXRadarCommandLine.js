@@ -1,4 +1,4 @@
-class PulseXRadarConsole extends HTMLElement {
+class PulseXRadarCommandLine extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -26,13 +26,42 @@ class PulseXRadarConsole extends HTMLElement {
             :host {
                 display: block;
                 width: 100%;
+                height: 100%;
                 font-family: 'Courier New', monospace; 
             }
 
-            .input-wrapper {
+            .consoleDiv {
+                display: flex;
+                flex-direction: column;
+                flex: 1;
+                overflow-y: auto;
+                height: calc(100% - 42px);
+                background: #091318;
+            }
+
+            .consoleDiv h2 {
+                font-size: 1rem;
+                padding: 10px;
+            }
+
+            #console {
+                height: 100%;
+                padding: 0 10px;
+            }
+
+            .logDiv {
+                color: #a3c3ff;
+            }
+
+            .errorDiv {
+                color: #ffa3a3ff;
+            }
+
+            .inputWrapper {
                 position: relative;
                 width: 100%; 
                 height: 40px;
+                border-top: 2px solid var(--border);
             }
             
             #cmdInput, 
@@ -70,7 +99,13 @@ class PulseXRadarConsole extends HTMLElement {
             .num   { color: #fff6a0; }
             .arg    { color: #d38cff; } /* Violet pour les arguments connus */
         </style>
-        <div class="input-wrapper">
+        <div class="consoleDiv">
+            <h2>Historique</h2>
+            <div id="console">
+
+            </div>
+        </div>
+        <div class="inputWrapper">
             <div id="highlight"></div>
             <input id="cmdInput" spellcheck="false" autocomplete="off" />
         </div>
@@ -207,6 +242,33 @@ class PulseXRadarConsole extends HTMLElement {
         display.innerHTML = this.highlight(input.value);
         setTimeout(() => input.setSelectionRange(input.value.length, input.value.length), 0);
     }
+
+    addCommand(cmd) {
+        let commandDiv = document.createElement('div');
+        commandDiv.innerHTML = `
+            ${this.highlight(cmd)}
+        `;
+        this.shadowRoot.getElementById('console').appendChild(commandDiv);
+    }
+
+    addLog(log) {
+        let logDiv = document.createElement('div');
+        logDiv.className = 'logDiv';
+        logDiv.innerHTML = `
+            <span class="log">LOG: ${log}</span>
+        `;
+        this.shadowRoot.getElementById('console').appendChild(logDiv);
+    }
+
+    addError(error) {
+        let errorDiv = document.createElement('div');
+        errorDiv.className = 'errorDiv';
+        errorDiv.innerHTML = `
+            ${error}
+        `;
+        this.shadowRoot.getElementById('console').appendChild(errorDiv);
+    }
+
 }
 
-customElements.define('pulsex-radar-console', PulseXRadarConsole);
+customElements.define('pulsex-radar-command-line', PulseXRadarCommandLine);
