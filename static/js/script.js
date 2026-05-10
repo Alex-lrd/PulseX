@@ -1,99 +1,126 @@
+// CustomElements
 import "./components/PulseXRadarCommandLine.js";
 import "./components/PulseXRadarElement.js";
 
+// Cahrgement du DOM
 document.addEventListener("DOMContentLoaded", () => {
-    // const radarConsole = document.querySelector(".console-log");
-    const radarCommandLine = document.querySelector("pulsex-radar-command-line");
-    const radar = document.getElementById('radar');
+    window.radarCommandLine = document.querySelector("pulsex-radar-command-line");
+    window.radar = document.getElementById('radar');
 
-
-
-    if (radarCommandLine) {
-        // Setup les commandes
-        radarCommandLine.commands = {
-            "/scan": ["start", "stop", "restart"],
-            "/speed": ["get", "set"],
-            "/propagation": ["get", "set"],
-        };
-
-        // Recuperation des commandes
-        radarCommandLine.addEventListener("command-submit", (event) => {
-            let cmd = event.detail.command;
-
-            console.log("Commande recue :", cmd);
-            interpreter(cmd);
-        });
-    }
-
-    function interpreter(cmd) {
-        const parts = cmd.slice(1).split(' ');
-        const commandName = parts[0];
-        const args = parts.slice(1);
-
-        if (commandName == 'scan') {
-            if (args[0] === 'start') {
-                start();
-            } else if (args[0] === 'stop') {
-                stop();
-            } else {
-                // console.log('commande inconnu');
-                radarCommandLine.addError(cmd);
-                return;
-            }
-        } else if (commandName == 'speed') {
-            if (args[0] === 'get') {
-                // Todo
-            } else if (args[0] === 'set') {
-                // Todo
-            } else {
-                radarCommandLine.addError(cmd);
-                return;
-            }
-        } else if (commandName == 'propagation') {
-            if (args[0] === 'get') {
-                // Todo
-            } else if (args[0] === 'set') {
-                // Todo
-            } else {
-                radarCommandLine.addError(cmd);
-                return;
-            }
-        } else {
-            radarCommandLine.addError(`<span class"error">Error: ${cmd} commande non reconnu</span>`);
-        }
-        radarCommandLine.addCommand(cmd);
-    }
-
-    function start() {
-        fetch("/api/start");
-    }
-
-    function stop() {
-        fetch("/api/stop");
-    }
-
-    async function updateDistance() {
-        try {
-            const res = await fetch("/api/distance");
-            const data = await res.json();
-
-            // console.log("DATA:", data);
-
-            if (data.distance !== null) {
-                // console.log(data.distance);
-                radarCommandLine.addLog(data.distance);
-
-                radar.addTarget(data.distance);
-
-
-
-                // document.getElementById("distance").innerText =
-                //     "Distance: " + data.distance.toFixed(2) + " cm";
-            }
-        } catch (e) {}
-
-        setTimeout(updateDistance, 500);
-    }
+    window.radarCommandLine.commands = {
+        "/scan": ["start", "stop"],
+        "/speed": ["get", "set"],
+        "/propagation": ["get", "set"],
+    };
+    window.radarCommandLine.addEventListener("command-submit", (event) => {
+        let cmd = event.detail.command;
+        console.log("Commande reçue :", cmd);
+        interpreter(cmd);
+    });
 
     updateDistance();
 });
+
+
+// Fonctions
+async function interpreter(cmd) {
+    const parts = cmd.slice(1).split(' ');
+    const commandName = parts[0];
+    const args = parts.slice(1);
+
+    if (commandName === 'scan') {
+        if (args[0] === 'start') {
+            start();
+        } else if (args[0] === 'stop') {
+            stop();
+        } else if (args[0] === 'restart') {
+            stop();
+            setTimeout(start, 500);
+        } else {
+            window.radarCommandLine.addError(cmd);
+            return;
+        }
+    } 
+    else if (commandName === 'speed') {
+        if (args[0] === 'get') {
+            const res = await fetch("/api/speed");
+            const data = await res.json();
+            window.radarCommandLine.addLog(`Vitesse actuelle du servo (delay) : ${data.speed} ms`);
+        } else if (args[0] === 'set') {
+            const val = parseInt(args[1]);
+            if (isNaN(val) || val <= 0) {
+                window.radarCommandLine.addError("Usage: /speed set [valeur en ms (ex: 50)]");
+                return;
+            }
+            await fetch("/api/speed", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ value: val })
+            });
+            window.radarCommandLine.addLog(`Commande envoyée : Vitesse fixée à ${val} ms`);
+        } else {
+            window.radarCommandLine.addError(cmd);
+            return;
+        }
+    } 
+    else if (commandName === 'propagation') {
+        if (args[0] === 'get') {
+            const res = await fetch("/api/propagation");
+            const data = await res.json();
+            window.radarCommandLine.addLog(`Facteur de propagation actuel : ${data.propagation}`);
+        } else if (args[0] === 'set') {
+            const val = parseFloat(args[1]);
+            if (isNaN(val) || val <= 0) {
+                window.radarCommandLine.addError("Usage: /propagation set [valeur (ex: 0.0343)]");
+                return;
+            }
+            await fetch("/api/propagation", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ value: val })
+            });
+            window.radarCommandLine.addLog(`Commande envoyée : Propagation fixée à ${val}`);
+        } else {
+            window.radarCommandLine.addError(cmd);
+            return;
+        }
+    } else {
+        window.radarCommandLine.addError(`<span class="error">Error: ${cmd} commande non reconnue</span>`);
+    }
+    window.radarCommandLine.addCommand(cmd);
+}
+
+function start() {
+    fetch("/api/start");
+}
+
+function stop() {
+    fetch("/api/stop");
+}
+
+async function updateDistance() {
+    const res = await fetch("/api/distance");
+    const data = await res.json();
+
+    if (data.age !== null && data.age > 2.0) {
+        console.warn(`Données obsolètes (âge : ${data.age}s).`);
+    }
+
+    if (data.angle !== null) {
+        if (data.d1 !== null) {
+            window.radarCommandLine.addLog(`[Angle ${data.angle}°] Capteur A: ${data.d1.toFixed(2)} cm`);
+            if (typeof radar.addTarget === 'function') {
+                radar.addTarget(data.d1, data.angle); 
+            }
+        }
+        if (data.d2 !== null) {
+            let angleOppose = (data.angle + 180) % 360;
+            window.radarCommandLine.addLog(`[Angle ${angleOppose}°] Capteur B: ${data.d2.toFixed(2)} cm`);
+            if (typeof radar.addTarget === 'function') {
+                radar.addTarget(data.d2, angleOppose);
+            }
+        }
+    }
+    setTimeout(updateDistance, 100);
+}
+

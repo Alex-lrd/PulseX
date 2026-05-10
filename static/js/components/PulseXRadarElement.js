@@ -19,14 +19,12 @@ export class PulseXRadarElement extends HTMLElement {
     }
 
 
-    addTarget(distance) {
+    addTarget(distance, angle) {
         const radarWidth = this.offsetWidth; // Largeur du radar sans les marges
         const radarHeight = this.offsetHeight;
-        const maxDistance = 400; // Distance maximale que le radar peut afficher
+        const maxDistance = 400; // Distance max
 
-        // Pas de moteur donc pas d'angle (test angle random)
-        const angle = Math.random() * 2 * Math.PI;
-        const radius = (distance / maxDistance) * (radarWidth / 2); // Rayon proportionnel à la distance
+        const radius = (distance / maxDistance) * (radarWidth / 2);
 
         const x = radarWidth / 2 + radius * Math.cos(angle);
         const y = radarHeight / 2 + radius * Math.sin(angle);
