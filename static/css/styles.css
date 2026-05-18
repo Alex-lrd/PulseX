@@ -81,6 +81,7 @@ input {
     position: absolute;
     width: 10px;
     height: 10px;
+    transform: translate(-50%, -50%);
     border-radius: 50%;
     background: var(--accent);
     box-shadow: 0 0 5px var(--accent);
@@ -157,4 +158,3 @@ pulsex-radar-command-line {
         linear-gradient(0deg, transparent 49.85%, rgba(88, 243, 209, 0.12) 50%, transparent 50.15%),
         linear-gradient(90deg, transparent 49.85%, rgba(88, 243, 209, 0.12) 50%, transparent 50.15%);
 }
-

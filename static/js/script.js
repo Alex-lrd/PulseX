@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
         "/scan": ["start", "stop"],
         "/speed": ["get", "set"],
         "/propagation": ["get", "set"],
+        "/distance": ["get", "set"],
     };
     window.radarCommandLine.addEventListener("command-submit", (event) => {
         let cmd = event.detail.command;

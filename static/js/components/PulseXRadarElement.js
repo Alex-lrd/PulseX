@@ -20,14 +20,16 @@ export class PulseXRadarElement extends HTMLElement {
 
 
     addTarget(distance, angle) {
-        const radarWidth = this.offsetWidth; // Largeur du radar sans les marges
+        const radarWidth = this.offsetWidth;
         const radarHeight = this.offsetHeight;
-        const maxDistance = 400; // Distance max
+        const maxDistance = 200;
+        const clampedDistance = Math.min(Math.max(distance, 0), maxDistance);
+        const angleInRadians = (angle * Math.PI) / 180;
 
-        const radius = (distance / maxDistance) * (radarWidth / 2);
+        const radius = (clampedDistance / maxDistance) * (Math.min(radarWidth, radarHeight) / 2);
 
-        const x = radarWidth / 2 + radius * Math.cos(angle);
-        const y = radarHeight / 2 + radius * Math.sin(angle);
+        const x = radarWidth / 2 + radius * Math.cos(angleInRadians);
+        const y = radarHeight / 2 - radius * Math.sin(angleInRadians);
 
         const target = document.createElement("div");
         target.classList.add("target");
