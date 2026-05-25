@@ -85,6 +85,31 @@ async function interpreter(cmd) {
             window.radarCommandLine.addError(cmd);
             return;
         }
+    } 
+    else if (commandName === 'distance') {
+        if (args[0] === 'get') {
+            const res = await fetch("/api/distance-config");
+            const data = await res.json();
+            window.radarCommandLine.addLog(`Portee max radar actuelle : ${data.distance} cm`);
+        } else if (args[0] === 'set') {
+            const val = parseFloat(args[1]);
+            if (isNaN(val) || val <= 0) {
+                window.radarCommandLine.addError("Usage: /distance set [valeur en cm (ex: 200)]");
+                return;
+            }
+            await fetch("/api/distance-config", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ value: val })
+            });
+            if (typeof radar.setMaxDistance === 'function') {
+                radar.setMaxDistance(val);
+            }
+            window.radarCommandLine.addLog(`Portee max radar fixee a ${val} cm`);
+        } else {
+            window.radarCommandLine.addError(cmd);
+            return;
+        }
     } else {
         window.radarCommandLine.addError(`<span class="error">Error: ${cmd} commande non reconnue</span>`);
     }
@@ -107,7 +132,14 @@ async function updateDistance() {
         console.warn(`Données obsolètes (âge : ${data.age}s).`);
     }
 
+    if (typeof radar.setMaxDistance === 'function' && data.maxDistance) {
+        radar.setMaxDistance(data.maxDistance);
+    }
+
     if (data.angle !== null) {
+        if (typeof radar.setSweepAngle === 'function') {
+            radar.setSweepAngle(data.angle);
+        }
         if (data.d1 !== null) {
             window.radarCommandLine.addLog(`[Angle ${data.angle}°] Capteur A: ${data.d1.toFixed(2)} cm`);
             if (typeof radar.addTarget === 'function') {
@@ -124,4 +156,3 @@ async function updateDistance() {
     }
     setTimeout(updateDistance, 100);
 }
-

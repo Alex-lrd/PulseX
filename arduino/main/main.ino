@@ -4,7 +4,7 @@
 bool scan = false;
 float propagation = 0.0343;
 
-// --- CONFIGURATION SERVO ---
+// --- SERVO ---
 Servo myServo;
 const int servoPin = 9;  
 int angle = 0;
@@ -50,7 +50,7 @@ float getDistance(int trigPin, int echoPin) {
 }
 
 void loop() {
-  // --- LECTURE DES COMMANDES SÉRIE ---
+  // --- LECTURE COMMANDES ---
   if (Serial.available()) {
     String cmd = Serial.readStringUntil('\n');
     cmd.trim();
@@ -90,7 +90,7 @@ void loop() {
     }
   }
 
-  // --- BALAYAGE ET CAPTURE ---
+  // --- BALAYAGE ---
   if (scan) {
     myServo.attach(servoPin);
     myServo.write(angle);
@@ -124,7 +124,7 @@ void loop() {
 
     angle += stepDir;
 
-    // --- GESTION ADOUCIE DU CHANGEMENT DE DIRECTION ---
+    // --- CHANGEMENT DIRECTION ---
     if (angle >= 180) {
       angle = 180;
       stepDir = -5; 
