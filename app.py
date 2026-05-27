@@ -1,5 +1,4 @@
-
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 import threading
 import serial
 import time
@@ -16,11 +15,14 @@ ser.reset_output_buffer()
 scan = False
 write_queue = queue.Queue()
 
-latest = {
+latest_data = {
     "angle": None,
     "d1": None,
     "d2": None,
-    "time": 0
+    "time": 0,
+    "speed": 50,             
+    "propagation": 0.0343,   
+    "max_distance": 200.0
 }
 
 # ---------------- SERIAL THREAD ----------------
@@ -43,24 +45,31 @@ def serial_worker():
                 while '\n' in buffer:
                     line, buffer = buffer.split('\n', 1)
                     line = line.strip()
-                    if not line or line.startswith("RECU:"):
+                    if not line:
                         continue
 
-                    if scan:
+                    print(f"ARDUINO: {line}")
+
+                    # réponses système de l'Arduino pour mettre à jour Flask
+                    if line.startswith("RECU:speed") or line.startswith("INFO:speed"):
+                        latest_data["speed"] = int(line.split()[1])
+                    elif line.startswith("RECU:propagation") or line.startswith("INFO:propagation"):
+                        latest_data["propagation"] = float(line.split()[1])
+                        
+                    elif not line.startswith("RECU:") and not line.startswith("INFO:") and scan:
                         parts = line.split(",")
                         if len(parts) == 3:
                             try:
                                 angle = int(parts[0])
-                                d1 = float(parts[1])
-                                d2 = float(parts[2])
-                                latest["angle"] = angle
-                                latest["d1"] = d1 if d1 > 0 else None
-                                latest["d2"] = d2 if d2 > 0 else None
-                                latest["time"] = time.time()
+                                val1 = float(parts[1])
+                                val2 = float(parts[2])
+                                
+                                latest_data["angle"] = angle
+                                latest_data["d1"] = val1 if val1 > 0 else None
+                                latest_data["d2"] = val2 if val2 > 0 else None
+                                latest_data["time"] = time.time()
                             except ValueError:
-                                print(f"LOG: Parse erreur : {line}")
-                        else:
-                            print(f"LOG: Format inconnu : {line}")
+                                pass
 
         except Exception as e:
             print(f"Serial error: {e}")
@@ -69,6 +78,10 @@ def serial_worker():
 
 worker_thread = threading.Thread(target=serial_worker, daemon=True)
 worker_thread.start()
+
+# Demande initiale à l'Arduino pour synchroniser les valeurs par défaut
+write_queue.put(b"speed_get\n")
+write_queue.put(b"propagation_get\n")
 
 # ---------------- ROUTES ----------------
 @app.route("/")
@@ -87,18 +100,48 @@ def stop():
     global scan
     write_queue.put(b"stop\n")
     scan = False
-    latest.update({"angle": None, "d1": None, "d2": None, "time": 0})
+    latest_data.update({"angle": None, "d1": None, "d2": None, "time": 0})
     return jsonify({"status": "stopped"})
 
-@app.route("/api/scan")
-def scan_data():
+@app.route("/api/distance")
+def distance():
+    age = round(time.time() - latest_data["time"], 2) if latest_data["time"] else None
     return jsonify({
-        "angle": latest["angle"],
-        "d1": latest["d1"],
-        "d2": latest["d2"],
-        "age": round(time.time() - latest["time"], 2) if latest["time"] else None
+        "angle": latest_data["angle"],
+        "d1": latest_data["d1"],
+        "d2": latest_data["d2"],
+        "age": age,
+        "maxDistance": latest_data["max_distance"]
     })
 
-# ---------------- RUN ----------------
+# --- NOUVELLES ROUTES ---
+
+@app.route("/api/speed", methods=["GET", "POST"])
+def speed():
+    if request.method == "POST":
+        val = request.json.get("value")
+        if val is not None:
+            write_queue.put(f"speed {val}\n".encode())
+            return jsonify({"status": "updating", "value": val})
+    return jsonify({"speed": latest_data["speed"]})
+
+@app.route("/api/propagation", methods=["GET", "POST"])
+def propagation():
+    if request.method == "POST":
+        val = request.json.get("value")
+        if val is not None:
+            write_queue.put(f"propagation {val}\n".encode())
+            return jsonify({"status": "updating", "value": val})
+    return jsonify({"propagation": latest_data["propagation"]})
+
+@app.route("/api/distance-config", methods=["GET", "POST"])
+def distance_config():
+    if request.method == "POST":
+        val = request.json.get("value")
+        if val is not None:
+            latest_data["max_distance"] = float(val)
+            return jsonify({"status": "updated", "value": latest_data["max_distance"]})
+    return jsonify({"distance": latest_data["max_distance"]})
+
 if __name__ == "__main__":
     app.run(debug=True, use_reloader=False)
