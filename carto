@@ -1,24 +1,18 @@
-A0:Bleu 					Pin5 depuis la gauche
-A1:Blanc
-D2:
-A2:Orange
-A3:Jaunec 
-GND:
+Moteur:
+- Rouge VCC en bas a gauche
+- Blanc PWM a droite P6 (D9)
+- Noir GND en haut a droite
 
 
+Capteur 1:
+- Rouge VCC en bas a gauche
+- Bleu Trig a gauche P5 (A0)
+- Blanc Echo a gauche P6 (A1)
+- Noir GND en Bas a droite
 
+Capteur 2:
+- Rouge VCC en bas a gauche
+- Bleu Trig a gauche P8 (A2)
+- Blanc Echo a gauche P9 (A3)
+- Noir GND en Bas a droite
 
-
-
-
-RGB:
-RST:
-D3:
-A5/slt:
-A4/sda:
-D9:
-D10:
-D5:
-D6:
-D7:
-D8:
