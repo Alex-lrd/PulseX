@@ -45,5 +45,11 @@ Le système collecte des données, les traite, puis peut les exploiter pour des 
 
 ## 👨‍💻 Auteurs  
 - Liard Alexandre   
-- Neiss Adel    
+- Neiss Adel
 
+## Presentation canva
+https://canva.link/8ovvc8rjheinnf6
+
+## Fichiers
+arduino/main (projet version sans fil)
+arduino/new (projet version Lora)
